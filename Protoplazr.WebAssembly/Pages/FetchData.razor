@@ -1,0 +1,50 @@
+﻿@page "/fetchdata"
+@using Grpc.Net.Client
+@using Grpc.Net.Client.Web
+@inject HttpClient Http
+
+<h1>Weather forecast</h1>
+
+<p>This component demonstrates fetching data from the server.</p>
+
+@if (items == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in items)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.Message</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private PayloadItem[] items;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var channel = GrpcChannel.ForAddress("https://localhost:5001", new GrpcChannelOptions
+        {
+            HttpHandler = new GrpcWebHandler(new HttpClientHandler())
+        });
+
+        var client = new Greeter.GreeterClient(channel);
+        var response = await client.SayHelloAsync(new HelloRequest { Name = ".NET" });
+
+        items = response.Items.ToArray();
+    }
+}

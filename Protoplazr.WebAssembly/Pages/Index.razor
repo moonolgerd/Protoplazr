@@ -1,0 +1,30 @@
+﻿@page "/"
+@using Grpc.Net.Client
+@using Grpc.Net.Client.Web
+@using Protoplazr.Shared
+@using ProtoBuf.Grpc.Client
+
+<h1>Hello, world!</h1>
+
+Protobuf.NET Example
+
+<p>
+    @Reply?.NewText
+    @Reply?.NewValue
+</p>
+
+@code {
+    MyServiceResult Reply { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var channel = GrpcChannel.ForAddress("https://localhost:5001", new GrpcChannelOptions
+        {
+            HttpHandler = new GrpcWebHandler(new HttpClientHandler())
+        });
+
+        var testFacade = channel.CreateGrpcService<IMyService>();
+        var request = new MyServiceRequest() { Text = "Hello world", Value = 42 };
+        Reply = await testFacade.DoSomething(request);
+    }
+}
