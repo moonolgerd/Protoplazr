@@ -15,19 +15,24 @@ namespace Protoplazr
             _logger = logger;
         }
 
-        public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
+        public override async Task SayHello(HelloRequest request, IServerStreamWriter<HelloReply> responseStream, ServerCallContext context)
         {
-            var item = new PayloadItem()
+            for (var i = 0; i < 100; i++)
             {
-                Id = 1,
-                Message = "Hello One"
-            };
-            var reply = new HelloReply
-            {
-                Message = "Hello " + request.Name
-            };
-            reply.Items.Add(item);
-            return Task.FromResult(reply);
+                var item = new PayloadItem()
+                {
+                    Id = i,
+                    Message = $"Hello {i}"
+                };
+                var reply = new HelloReply
+                {
+                    Message = "Hello " + request.Name
+                };
+                reply.Items.Add(item);
+                await responseStream.WriteAsync(reply);
+
+                await Task.Delay(1000);
+            }
         }
     }
 }

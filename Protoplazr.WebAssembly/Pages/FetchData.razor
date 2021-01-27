@@ -1,6 +1,7 @@
 ﻿@page "/fetchdata"
 @using Grpc.Net.Client
 @using Grpc.Net.Client.Web
+@using Grpc.Core
 @inject HttpClient Http
 
 <h1>Weather forecast</h1>
@@ -9,32 +10,32 @@
 
 @if (items == null)
 {
-    <p><em>Loading...</em></p>
+<p><em>Loading...</em></p>
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Message</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in items)
+<table class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Message</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in items)
             {
-                <tr>
-                    <td>@item.Id</td>
-                    <td>@item.Message</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+        <tr>
+            <td>@item.Id</td>
+            <td>@item.Message</td>
+        </tr>
+        }
+    </tbody>
+</table>
 }
 
 @code {
-    private PayloadItem[] items;
-
+    private List<PayloadItem> items = new ();
+    
     protected override async Task OnInitializedAsync()
     {
         var channel = GrpcChannel.ForAddress("https://localhost:5001", new GrpcChannelOptions
@@ -43,8 +44,12 @@ else
         });
 
         var client = new Greeter.GreeterClient(channel);
-        var response = await client.SayHelloAsync(new HelloRequest { Name = ".NET" });
+        var response = client.SayHello(new HelloRequest { Name = ".NET" });
 
-        items = response.Items.ToArray();
+        await foreach (var res in response.ResponseStream.ReadAllAsync())
+        {
+            items.Add(res.Items[0]);
+            await InvokeAsync(StateHasChanged);
+        }
     }
 }
